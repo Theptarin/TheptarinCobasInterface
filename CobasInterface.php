@@ -24,18 +24,18 @@ class CobasInterface {
         $list_files = glob($path_foder);
         foreach ($list_files as $filename) {
             //echo "$filename size " . filesize($filename) . "\n";
+            printf("$filename size " . filesize($filename) . "  " . date('Ymd H:i:s') ."\n");
+            //echo date("Ymd h:i:s");
             if (fopen($filename, "r")) {
                 $myfile = fopen($filename, "r") or die("Unable to open file!");
                 $hl7 = new HL7(fread($myfile, filesize($filename)));
                 $message = $hl7->get_message();
                 if ($hl7->valid) {
-                    //print_r($message);
                     $hn = $message["PID"][3];
                     $this->get_patient($hn);
-                    print_r($hn); //HN. ในไฟล์ HL7
                     fclose($myfile);
                     $this->set_message();
-                    //unlink($filename);
+                    unlink($filename);
                 }  else {
                     echo "Unable to read file!";
                 }
@@ -68,7 +68,7 @@ class CobasInterface {
         $fname = iconv("UTF-8", "tis-620", $patient[fname]);
         $lname = iconv("UTF-8", "tis-620", $patient[lname]);
         $today = date("YmdHi");
-        $myfile = fopen("./ADT/$patient[hn].txt", "w") or die("Unable to open file!");
+        $myfile = fopen("./ADT/$today$patient[hn].hl7", "w") or die("Unable to open file!");
         $segment = "MSH|^~\&||HIS||cobasIT1000|$today||ADT^A01|1027|P|2.3|||NE|NE|AU|ASCII\n";
         $segment .= "EVN|A01|$today\n";
         $segment .= "PID|1||$patient[hn]^^^100^A||$fname^$lname||$patient[birthday]|$patient[sex]||4|^^^^3121||||1201||||||||1100|||||||||AAA\n";
