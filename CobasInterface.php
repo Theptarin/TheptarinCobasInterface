@@ -68,7 +68,7 @@ class CobasInterface {
         $fname = iconv("UTF-8", "tis-620", $patient[fname]);
         $lname = iconv("UTF-8", "tis-620", $patient[lname]);
         $today = date("YmdHi");
-        $myfile = fopen("./ADT/$today$patient[hn].hl7", "w") or die("Unable to open file!");
+        $myfile = fopen("./HIS/REQ/$today$patient[hn].hl7", "w") or die("Unable to open file!");
         $segment = "MSH|^~\&||HIS||cobasIT1000|$today||ADT^A01|1027|P|2.3|||NE|NE|AU|ASCII\n";
         $segment .= "EVN|A01|$today\n";
         $segment .= "PID|1||$patient[hn]^^^100^A||$fname^$lname||$patient[birthday]|$patient[sex]||4|^^^^3121||||1201||||||||1100|||||||||AAA\n";
@@ -79,4 +79,4 @@ class CobasInterface {
 
 }
 
-$my = new CobasInterface("./RES/*.hl7");
+$my = new CobasInterface("./HIS/RES/*.hl7");
