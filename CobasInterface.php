@@ -35,6 +35,7 @@ class CobasInterface {
                     $this->get_patient($hn);
                     fclose($myfile);
                     $this->set_message();
+                    rename($filename, "./BAK/RES/" . basename($filename));
                     unlink($filename);
                 }  else {
                     echo "Unable to read file!";
