@@ -9,12 +9,13 @@ require_once 'HL7.php';
 
 /**
  * Description of CobasInterface
- * การเชื่อมข้อมูล CobasIT1000 เพื่อใช้ข้อมูลผู้ป่วยจาก HIMS
+ * การเชื่อมข้อมูล CobasIT1000 เพื่อใช้ข้อมูลผู้ป่วยจาก HIMS ซึ่งต้องเตรียมเมาส์แชร์ไฟล์ cobas ไว้ที่โฟลเดอร์ HIS และ hims-doc ที่โฟลเดอร์ HIMS
  * 1. อ่านไฟล์ HL7 ที่อยู่ในโฟลเดอร์
  * 2. วิเคราะห์ไฟล์แยก HN. มาใช้งาน
  * 3. นำ HN. ไปค้นข้อมูล
  * 4. สร้างไฟล์ ADT Message ไปไว้ที่โฟลเดอร์
- * @author orr
+ * 5. ย้ายไฟล์ HL7 ไปที่โฟลเดอร์ HIMS
+ * @author suchart bunhachirat
  */
 class CobasInterface {
 
@@ -35,7 +36,7 @@ class CobasInterface {
                     $this->get_patient($hn);
                     fclose($myfile);
                     $this->set_message();
-                    rename($filename, "./BAK/RES/" . basename($filename));
+                    rename($filename, "./HIMS/RES/" . basename($filename));
                     unlink($filename);
                 }  else {
                     echo "Unable to read file!";
