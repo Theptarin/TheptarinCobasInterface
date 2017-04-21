@@ -8,10 +8,10 @@
 
 /**
  * Description of HL7
- *
+ * เพื่อใช้กับ Caobas ในช่วงแรกเท่านั้น
  * @author orr
  */
-class HL7 {
+class cobas_hl7 {
 
     protected $segs = "";
     protected $field_segment = "";

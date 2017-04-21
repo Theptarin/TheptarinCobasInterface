@@ -1,6 +1,7 @@
 <?php
 
-require_once 'HL7.php';
+require_once "./lis_hl7_2_db.php";
+require_once "cobas_hl7.php";
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -20,34 +21,79 @@ require_once 'HL7.php';
 class CobasInterface {
 
     protected $patient = array();
-    
-    public function __construct($path_foder) {
-        $list_files = glob($path_foder);
+
+    public function __construct($cobas_foder) {
+        /**
+         * ถ้าใส่พาทไฟล์ผิดจะไม่มี error ครับ
+         */
+        $list_files = glob($cobas_foder);
         foreach ($list_files as $filename) {
-            //echo "$filename size " . filesize($filename) . "\n";
-            printf("$filename size " . filesize($filename) . "  " . date('Ymd H:i:s') ."\n");
-            //echo date("Ymd h:i:s");
-            if (fopen($filename, "r")) {
-                $myfile = fopen($filename, "r") or die("Unable to open file!");
-                $hl7 = new HL7(fread($myfile, filesize($filename)));
-                $message = $hl7->get_message();
-                if ($hl7->valid) {
-                    $hn = $message["PID"][3];
-                    $this->get_patient($hn);
-                    fclose($myfile);
-                    $this->set_message();
-                    rename($filename, "./HIMS/RES/" . basename($filename));
-                    unlink($filename);
-                }  else {
-                    echo "Unable to read file!";
-                }
+            printf("$filename size " . filesize($filename ) . "  " . date('Ymd H:i:s') . "\n");
+            $this->create_message($filename);
+            $lis_hl7_2_db = new lis_hl7_2_db($filename,$this->patient);
+            if ($lis_hl7_2_db->error_message == null) {
+                $this->move_done_file($filename);
             } else {
-                echo "Unable to open file!";
+                $this->move_error_file($filename);
+                echo $lis_hl7_2_db->error_message . "\n";
             }
         }
     }
-    
-    
+
+    /**
+     * ย้ายไฟล์ที่ประมาลผลสำเร็จ
+     * @param string $filename
+     */
+    private function move_done_file($filename) {
+        try {
+            rename($filename, "/var/www/mount/hims-doc/cobas/RES/" . basename($filename));
+        } catch (Exception $ex) {
+            echo 'Caught exception: ', $ex->getMessage(), "\n";
+        }
+    }
+
+    /**
+     * ย้ายไฟล์ที่ประมาลผลไม่สำเร็จ
+     * @param string $filename
+     */
+    private function move_error_file($filename) {
+        try {
+            rename($filename, "/var/www/mount/hims-doc/cobas/RES/" . basename($filename));
+        } catch (Exception $ex) {
+            echo 'Caught exception: ', $ex->getMessage(), "\n";
+        }
+    }
+
+    /**
+     * สร้างไฟล์ ADT Message ส่งกลับ Cobas
+     * @param string $filename
+     */
+    protected function create_message($filename) {
+        if (fopen($filename, "r")) {
+            $myfile = fopen($filename, "r") or die("Unable to open file!");
+            $hl7 = new cobas_hl7(fread($myfile, filesize($filename)));
+            $message = $hl7->get_message();
+            if ($hl7->valid) {
+                $hn = $message["PID"][3];
+                $this->get_patient($hn);
+                fclose($myfile);
+                $this->set_message();
+                /**
+                 * โฟลเดอร์ที่ต้องย้ายไปหลังจากสร้าง ADT Message แล้ว
+                 * $hims_foder = "/var/www/mount/hims-doc/cobas/RES/" . basename($filename);
+                 */
+                /* $hims_foder = "/var/www/mount/cobas-it-1000/his/ResultForTheptarin/" . basename($filename);
+                  echo "Move To " . $hims_foder . "\n";
+                  rename($filename, $hims_foder);
+                  unlink($filename); */
+            } else {
+                echo "Unable to read file!";
+            }
+        } else {
+            echo "Unable to open file!";
+        }
+    }
+
     protected function get_patient($hn) {
         $dsn = 'mysql:host=10.1.99.6;dbname=ttr_mse';
         $username = 'orr-projects';
@@ -64,22 +110,24 @@ class CobasInterface {
         print_r($this->patient);
         return;
     }
-    
-    protected function set_message(){
+
+    protected function set_message() {
         $patient = $this->patient;
-        $fname = iconv("UTF-8", "tis-620", $patient[fname]);
-        $lname = iconv("UTF-8", "tis-620", $patient[lname]);
+        $fname = iconv("UTF-8", "tis-620", $patient['fname']);
+        $lname = iconv("UTF-8", "tis-620", $patient['lname']);
         $today = date("YmdHi");
-        $myfile = fopen("./HIS/REQ/$today$patient[hn].hl7", "w") or die("Unable to open file!");
-        $myfile_clone = fopen("./HIMS/REQ/$today$patient[hn].hl7", "w") or die("Unable to open file!");
+        $myfile = fopen("/var/www/mount/cobas-it-1000/his/REQ/$today$patient[hn].hl7", "w") or die("Unable to open file!");
+        $myfile_hims = fopen("/var/www/mount/hims-doc/cobas/ADT/$today$patient[hn].hl7", "w") or die("Unable to open file!");
         $segment = "MSH|^~\&||HIS||cobasIT1000|$today||ADT^A01|1027|P|2.3|||NE|NE|AU|ASCII\n";
         $segment .= "EVN|A01|$today\n";
         $segment .= "PID|1||$patient[hn]^^^100^A||$fname^$lname||$patient[birthday]|$patient[sex]||4|^^^^3121||||1201||||||||1100|||||||||AAA\n";
         $segment .= "PV1|1|||||||||||||||||||\n";
         fwrite($myfile, $segment);
-        fwrite($myfile_clone, $segment);
+        fwrite($myfile_hims, $segment);
         fclose($myfile);
     }
+
 }
 
-$my = new CobasInterface("./HIS/RES/*.hl7");
+//$my = new CobasInterface("./HIS/RES/*.hl7");
+$my = new CobasInterface("/var/www/mount/cobas-it-1000/his/RES/*.hl7");
