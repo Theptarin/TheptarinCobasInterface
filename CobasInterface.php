@@ -1,6 +1,6 @@
 <?php
 
-require_once "./lis_hl7_2_db.php";
+require_once "./hl7_2_db.php";
 require_once "cobas_hl7.php";
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -15,7 +15,7 @@ require_once "cobas_hl7.php";
  * 2. วิเคราะห์ไฟล์แยก HN. มาใช้งาน
  * 3. นำ HN. ไปค้นข้อมูล
  * 4. สร้างไฟล์ ADT Message ไปไว้ที่โฟลเดอร์
- * 5. ย้ายไฟล์ HL7 ไปที่โฟลเดอร์ HIMS
+ * 5. ย้ายไฟล์ HL7 ไปที่โฟลเดอร์เตรียมส่ง HIMS "www/mount/hims-doc/cobas/RESForHims"
  * @author suchart bunhachirat
  */
 class CobasInterface {
@@ -30,12 +30,12 @@ class CobasInterface {
         foreach ($list_files as $filename) {
             printf("$filename size " . filesize($filename ) . "  " . date('Ymd H:i:s') . "\n");
             $this->create_message($filename);
-            $lis_hl7_2_db = new lis_hl7_2_db($filename,$this->patient);
-            if ($lis_hl7_2_db->error_message == null) {
+            $hl7_2_db = new hl7_2_db($filename,$this->patient);
+            if ($hl7_2_db->error_message == null) {
                 $this->move_done_file($filename);
             } else {
                 $this->move_error_file($filename);
-                echo $lis_hl7_2_db->error_message . "\n";
+                echo $hl7_2_db->error_message . "\n";
             }
         }
     }
@@ -46,7 +46,7 @@ class CobasInterface {
      */
     private function move_done_file($filename) {
         try {
-            rename($filename, "/var/www/mount/hims-doc/cobas/RES/" . basename($filename));
+            rename($filename, "/var/www/mount/hims-doc/cobas/RESForHims/" . basename($filename));
         } catch (Exception $ex) {
             echo 'Caught exception: ', $ex->getMessage(), "\n";
         }
@@ -58,7 +58,7 @@ class CobasInterface {
      */
     private function move_error_file($filename) {
         try {
-            rename($filename, "/var/www/mount/hims-doc/cobas/RES/" . basename($filename));
+            rename($filename, "/var/www/mount/hims-doc/cobas/RESForHims/" . basename($filename));
         } catch (Exception $ex) {
             echo 'Caught exception: ', $ex->getMessage(), "\n";
         }
@@ -129,5 +129,4 @@ class CobasInterface {
 
 }
 
-//$my = new CobasInterface("./HIS/RES/*.hl7");
 $my = new CobasInterface("/var/www/mount/cobas-it-1000/his/RES/*.hl7");

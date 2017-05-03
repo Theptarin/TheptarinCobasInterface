@@ -1,7 +1,5 @@
 <?php
 
-require_once "./orr_lib/hl7.php";
-
 /*
  * The MIT License
  *
@@ -25,9 +23,10 @@ require_once "./orr_lib/hl7.php";
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+require_once './orr_lib/hl7.php';
 
 /**
- * Description of lis_hl7_2_db
+ * Description of hl7_2_db สำหรับ Cobas
  * 
  * 1. อ่านไฟล์โดยใช้คลาส hl7
  * 2. เชื่อมฐานข้อมูล
@@ -35,22 +34,21 @@ require_once "./orr_lib/hl7.php";
  *
  * @author suchart bunhachirat
  */
-class lis_hl7_2_db {
+class hl7_2_db {
 
+    private $path_filename;
     private $hl7;
     private $conn = null;
     public $error_message = null;
-    protected $patient = array();
 
     /**
      * รับค่าพาธไฟล์ HL7
      * @param string $path_filename
      */
-    public function __construct($path_filename, $patient) {
-
+    public function __construct($path_filename) {
         $this->path_filename = $path_filename;
         try {
-            $this->hl7 = new hl7($path_filename);
+            $this->hl7 = new HL7($path_filename);
             $this->insert_order();
         } catch (Exception $ex) {
             echo 'Caught exception: ', $ex->getMessage(), "\n";
@@ -61,7 +59,7 @@ class lis_hl7_2_db {
      * เชื่อมฐานข้อมูลที่ต้องการใช้งาน
      */
     private function get_conn() {
-        $dsn = 'mysql:host=localhost;dbname=ttr_hims';
+        $dsn = 'mysql:host=10.1.99.6;dbname=ttr_hims';
         $username = 'orr-projects';
         $password = 'orr-projects';
         $options = array(
@@ -82,21 +80,17 @@ class lis_hl7_2_db {
     protected function insert_order() {
         $this->get_conn();
         $message = $this->hl7->get_message();
-        print_r($message);
+        //print_r($message);
 
-        $sql = "INSERT INTO lis_order (message_date, patient_id, patient_name, gender, birth_date, lis_number, reference_number, accept_time) VALUES (:message_date, :patient_id, :patient_name, :gender, :birth_date, :lis_number, :reference_number, :accept_time)";
+        $sql = "INSERT INTO lis_order (message_date, patient_id, patient_name, gender, birth_date, lis_number, reference_number, accept_time,request_div) VALUES (:message_date, :patient_id, :patient_name, :gender, :birth_date, :lis_number, :reference_number, :accept_time,:request_div)";
         $stmt = $this->conn->prepare($sql);
 
-        $fname = iconv("UTF-8", "tis-620", $this->patient['fname']);
-        $lname = iconv("UTF-8", "tis-620", $this->patient['lname']);
-        $patient_name = $fname . "^" . $lname;
-
         if ($stmt) {
-            $result = $stmt->execute([":message_date" => $message[0]->fields[5], ":patient_id" => $message[1]->fields[2], ":patient_name" => $patient_name, ":gender" => $this->patient[sex], ":birth_date" => $this->patient[birthday], ":lis_number" => $message[4]->fields[1], ":reference_number" => $message[3]->fields[1], ":accept_time" => $message[3]->fields[8]]);
+            $result = $stmt->execute(array(":message_date" => $message[0]->fields[5], ":patient_id" => $message[1]->fields[2], ":patient_name" => $message[1]->fields[4], ":gender" => $message[1]->fields[7], ":birth_date" => $message[1]->fields[6], ":lis_number" => $message[4]->fields[1], ":reference_number" => $message[3]->fields[1], ":accept_time" => $message[3]->fields[8], ":request_div" => substr($message[2]->fields[18],3)));
 
             if ($result) {
                 $this->read_result($message[4]->fields[1]);
-                print $message[4]->fields[1];
+                //print $message[4]->fields[1];
             } else {
                 $error = $stmt->errorInfo();
                 //echo 'Query failed with message: ' . $error[2];
@@ -148,7 +142,9 @@ class lis_hl7_2_db {
 
         $sql = "INSERT INTO lis_result (lis_number, lis_code, test, lab_code, result_code , result,  unit, normal_range, user_id, technical_time, medical_time) VALUES (:lis_number, :lis_code, :test, :lab_code, :result_code, :result, :unit, :normal_range, :user_id, :technical_time, :medical_time)";
         $stmt = $this->conn->prepare($sql);
-
+        /**
+         * @todo  lab_type จากไฟล์ HL7 ไม่มี แต่แก้ไขให้มีในตารางตามเดิม
+         * */
         if ($stmt) {
             $result = $stmt->execute(array(":lis_number" => $lis_number, ":lis_code" => $test[0], ":test" => $test[1], ":lab_code" => $test[2], ":result_code" => $test[3], ":result" => $message->fields[4], ":unit" => $message->fields[5], ":normal_range" => $message->fields[6], ":technical_time" => $validation_time[0], ":medical_time" => $validation_time[1], ":user_id" => $message->fields[15]));
 

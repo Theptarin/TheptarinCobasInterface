@@ -8,3 +8,4 @@
 # โครงสร้าง
 โฟลเดอร์โปรแกรม => www/service/TheptarinCobasInterface
 โฟลเดอร์ที่ใช้เชื่อมข้อมูล => www/mount/cobas-it-1000/his , www/mount/hims-doc/cobas
+
