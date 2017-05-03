@@ -46,7 +46,7 @@ class CobasInterface {
      */
     private function move_done_file($filename) {
         try {
-            rename($filename, "/var/www/mount/hims-doc/cobas/RESForHims/" . basename($filename));
+            rename($filename, "/var/www/mount/hims-doc/cobas/RES/" . basename($filename));
         } catch (Exception $ex) {
             echo 'Caught exception: ', $ex->getMessage(), "\n";
         }
@@ -58,7 +58,7 @@ class CobasInterface {
      */
     private function move_error_file($filename) {
         try {
-            rename($filename, "/var/www/mount/hims-doc/cobas/RESForHims/" . basename($filename));
+            rename($filename, "/var/www/mount/hims-doc/cobas/RES/" . basename($filename));
         } catch (Exception $ex) {
             echo 'Caught exception: ', $ex->getMessage(), "\n";
         }

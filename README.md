@@ -5,6 +5,7 @@
 เปิดไฟล์ผลหาบรรทัด PID|1||XXXXX| เพื่อคัด HN. ตรงส่วนที่เป็น XXXXX
 ระบบ Link HN. นำ HN. ค้นหาข้อมูลผู้ป่วยจาก MySQL
 ระบบ LInk HN. สร้างไฟล์ ADT กลับให้ Cobas
+โอนข้อมูลเข้า mysql
 # โครงสร้าง
 โฟลเดอร์โปรแกรม => www/service/TheptarinCobasInterface
 โฟลเดอร์ที่ใช้เชื่อมข้อมูล => www/mount/cobas-it-1000/his , www/mount/hims-doc/cobas

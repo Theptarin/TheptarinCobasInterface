@@ -44,12 +44,13 @@ class hl7_2_db {
     /**
      * รับค่าพาธไฟล์ HL7
      * @param string $path_filename
+     * @param array $patient ข้อมูลผู้ป่วย
      */
-    public function __construct($path_filename) {
+    public function __construct($path_filename,$patient) {
         $this->path_filename = $path_filename;
         try {
             $this->hl7 = new HL7($path_filename);
-            $this->insert_order();
+            $this->insert_order($patient);
         } catch (Exception $ex) {
             echo 'Caught exception: ', $ex->getMessage(), "\n";
         }
@@ -75,9 +76,9 @@ class hl7_2_db {
     }
 
     /**
-     * เพิ่มรายการใหม่ใน lis_order
+     * เพิ่มรายการใหม่ใน lis_order และเพิ่มข้อมูลผู้ป่วยของ รพ.
      */
-    protected function insert_order() {
+    protected function insert_order($patient) {
         $this->get_conn();
         $message = $this->hl7->get_message();
         //print_r($message);
@@ -86,7 +87,7 @@ class hl7_2_db {
         $stmt = $this->conn->prepare($sql);
 
         if ($stmt) {
-            $result = $stmt->execute(array(":message_date" => $message[0]->fields[5], ":patient_id" => $message[1]->fields[2], ":patient_name" => $message[1]->fields[4], ":gender" => $message[1]->fields[7], ":birth_date" => $message[1]->fields[6], ":lis_number" => $message[4]->fields[1], ":reference_number" => $message[3]->fields[1], ":accept_time" => $message[3]->fields[8], ":request_div" => substr($message[2]->fields[18],3)));
+            $result = $stmt->execute(array(":message_date" => $message[0]->fields[5], ":patient_id" => $message[1]->fields[2], ":patient_name" => $patient['fname'] . " " . $patient['lname'], ":gender" => $patient[sex], ":birth_date" => $patient[birthday], ":lis_number" => $message[4]->fields[1], ":reference_number" => $message[3]->fields[1], ":accept_time" => $message[3]->fields[8], ":request_div" => substr($message[2]->fields[18],3)));
 
             if ($result) {
                 $this->read_result($message[4]->fields[1]);
